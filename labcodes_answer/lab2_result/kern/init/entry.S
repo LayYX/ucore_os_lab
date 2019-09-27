@@ -1,6 +1,11 @@
 #include <mmu.h>
 #include <memlayout.h>
 
+#KERNBASE 0xC0000000
+#KMEMSIZE 0x38000000
+#KERNTOP (KERNBASE + KMEMSIZE)
+#PGSHIFT 12
+
 # 真实地址为 x - 0xC0000000
 #define REALLOC(x) (x - KERNBASE)
 
@@ -57,18 +62,24 @@ bootstacktop:
 # These page directory table and page table can be reused!
 .section .data.pgdir
 .align PGSIZE
+
+# 创建临时页目录
 __boot_pgdir:
 .globl __boot_pgdir
     # map va 0 ~ 4M to pa 0 ~ 4M (temporary)
     .long REALLOC(__boot_pt1) + (PTE_P | PTE_U | PTE_W)
+    # 填充4096-
     .space (KERNBASE >> PGSHIFT >> 10 << 2) - (. - __boot_pgdir) # pad to PDE of KERNBASE
     # map va KERNBASE + (0 ~ 4M) to pa 0 ~ 4M
     .long REALLOC(__boot_pt1) + (PTE_P | PTE_U | PTE_W)
     .space PGSIZE - (. - __boot_pgdir) # pad to PGSIZE
 
 .set i, 0
+
+# 创建临时页表
 __boot_pt1:
-.rept 1024
+.rept 1024 
+    # 创建1024个一级页表项：二级页表偏移量和标志位
     .long i * PGSIZE + (PTE_P | PTE_W)
     .set i, i + 1
 .endr
