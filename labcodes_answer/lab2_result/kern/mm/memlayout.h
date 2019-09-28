@@ -101,7 +101,7 @@ struct e820map
  * */
 struct Page
 {
-    int ref;                // page frame's reference counter
+    int ref;                // page frame's reference counter 页帧数，由首节点记录
     uint32_t flags;         // array of flags that describe the status of the page frame
     unsigned int property;  // the num of free block, used in first fit pm manager
     list_entry_t page_link; // free list link

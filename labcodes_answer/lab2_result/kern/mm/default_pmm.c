@@ -105,6 +105,12 @@ default_init(void) {
     nr_free = 0;
 }
 
+/**
+ * 初始化指定内存区域对应的页表
+ * 首节点记录页帧数量
+ * 将区域内的页表使用链表进行连接
+ * 将页表数量统计到 nr_free 中
+ */
 static void
 default_init_memmap(struct Page *base, size_t n) {
     assert(n > 0);

@@ -85,6 +85,7 @@ page2pa(struct Page *page) {
 }
 
 static inline struct Page *
+// 返回指定地址对应的页表
 pa2page(uintptr_t pa) {
     if (PPN(pa) >= npage) {
         panic("pa2page called with invalid pa");

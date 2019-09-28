@@ -207,6 +207,7 @@ struct taskstate {
 #define PTX(la) ((((uintptr_t)(la)) >> PTXSHIFT) & 0x3FF)
 
 // page number field of address
+// 计算整个二级页表内的偏移量
 #define PPN(la) (((uintptr_t)(la)) >> PTXSHIFT)
 
 // offset in page

@@ -143,6 +143,9 @@ init_pmm_manager(void) {
 }
 
 //init_memmap - call pmm->init_memmap to build Page struct for free memory  
+// 初始化指定内存区域的内存映射
+// *base：内存区域对应的第一张页表
+// n：内存对应的页表大小
 static void
 init_memmap(struct Page *base, size_t n) {
     pmm_manager->init_memmap(base, n);
@@ -221,14 +224,18 @@ page_init(void) {
 
     // 内核物理页数
     npage = maxpa / PGSIZE;
-    // 内核数据使用的物理页的最后一页的下一页
+    // 内核数据BSS段后的下一页
     pages = (struct Page *)ROUNDUP((void *)end, PGSIZE);
 
+    // 从pages开始的 npage * 页表大小的地址作为二级页表空间
+    // 一级页表的空间已经在 entry.S 中分配到 boot_pgdir
+    // 所以页目录的空间不需要重新分配，只需要重写即可
     for (i = 0; i < npage; i ++) {
-        // 将内核页后的页表设置为保留
+        // 将的页表区域对应的页表项设置为保留
         SetPageReserved(pages + i);
     }
 
+    // 页表后的内存空间为空闲内存空间
     uintptr_t freemem = PADDR((uintptr_t)pages + sizeof(struct Page) * npage);
 
     for (i = 0; i < memmap->nr_map; i ++) {
@@ -244,6 +251,7 @@ page_init(void) {
                 begin = ROUNDUP(begin, PGSIZE);
                 end = ROUNDDOWN(end, PGSIZE);
                 if (begin < end) {
+                    // 初始化内存映射
                     init_memmap(pa2page(begin), (end - begin) / PGSIZE);
                 }
             }
