@@ -36,9 +36,10 @@ typedef uintptr_t size_t;
 /* used for page numbers */
 typedef size_t ppn_t;
 
-/* *
+/* * 
  * Rounding operations (efficient when n is a power of 2)
  * Round down to the nearest multiple of n
+ * a - (a % n) = 向下
  * */
 #define ROUNDDOWN(a, n) ({                                          \
             size_t __a = (size_t)(a);                               \

@@ -45,7 +45,8 @@ seta20.2:
 
 # 内存探测
 probe_memory:
-    # 0x8000 存储内存大小
+    # 0x8000-0x8003 存储映射地址描述符数量
+    # 0x8004之后开始存放映射地址描述符数量
     movl $0, 0x8000
     xorl %ebx, %ebx  #如果是第一次调用或内存区域扫描完毕,则为 0。 如果不是,则存放上次调用之后的计数值
     # 表示设置调用 INT 15h BIOS 中断后,BIOS 返回的映射地址描述符的起始地址
@@ -59,7 +60,7 @@ start_probe:
     movw $12345, 0x8000 # 不跳转表示探测失败
     jmp finish_probe
 cont:
-    addw $20, %di
+    addw $20, %di   # 映射地址描述符增加20
     incl 0x8000     # 计数++
     cmpl $0, %ebx   # 判断是否检测完成
     jnz start_probe # 未完成则继续探测

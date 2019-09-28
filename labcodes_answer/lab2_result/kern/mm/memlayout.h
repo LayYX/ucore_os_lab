@@ -85,6 +85,7 @@ typedef uintptr_t pde_t;
 struct e820map
 {
     int nr_map;
+    // 内存映射地址描述符数组，大小为二十
     struct
     {
         uint64_t addr;
@@ -124,8 +125,8 @@ struct Page
 /* free_area_t - maintains a doubly linked list to record free (unused) pages */
 typedef struct
 {
-    list_entry_t free_list; // the list header
-    unsigned int nr_free;   // # of free pages in this free list
+    list_entry_t free_list; // the list header 记录空闲链表的头
+    unsigned int nr_free;   // # of free pages in this free list 空闲内存块总数
 } free_area_t;
 
 #endif /* !__ASSEMBLER__ */

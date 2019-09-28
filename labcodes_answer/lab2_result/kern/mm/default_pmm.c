@@ -100,6 +100,7 @@ free_area_t free_area;
 
 static void
 default_init(void) {
+    // 初始化链表  将前后节点指向自身
     list_init(&free_list);
     nr_free = 0;
 }

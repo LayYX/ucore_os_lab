@@ -99,11 +99,15 @@ bootmain(void) {
     ph = (struct proghdr *)((uintptr_t)ELFHDR + ELFHDR->e_phoff);
     eph = ph + ELFHDR->e_phnum;
     for (; ph < eph; ph ++) {
+        // 链接时，内核代码的地址是从 0xC000 000 开始的
+        // 这里将 va & 0xFFFFFF 就是为了将内核代码从 0 开始的地方
+        // 之后会建立页表映射： 0xC000 0000 指向 0x0
         readseg(ph->p_va & 0xFFFFFF, ph->p_memsz, ph->p_offset);
     }
 
     // call the entry point from the ELF header
     // note: does not return
+    // 调用内核代码，并将地址的高位置零保证访问的是低位地址
     ((void (*)(void))(ELFHDR->e_entry & 0xFFFFFF))();
 
 bad:

@@ -189,16 +189,24 @@ nr_free_pages(void) {
 /* pmm_init - initialize the physical memory management */
 static void
 page_init(void) {
+    // 虚拟地址指向 0xC000 8000,即指向之前放置内存探测结果的地方
     struct e820map *memmap = (struct e820map *)(0x8000 + KERNBASE);
+    // 物理内存的最大地址
     uint64_t maxpa = 0;
 
     cprintf("e820map:\n");
+
+    // 计算物理内存最大可用地址
     int i;
     for (i = 0; i < memmap->nr_map; i ++) {
+        // 当前内存描述符的 开始、结束位置
         uint64_t begin = memmap->map[i].addr, end = begin + memmap->map[i].size;
         cprintf("  memory: %08llx, [%08llx, %08llx], type = %d.\n",
                 memmap->map[i].size, begin, end - 1, memmap->map[i].type);
+        
+        // 内存描述符类型为可用
         if (memmap->map[i].type == E820_ARM) {
+            // 判断内存边界：
             if (maxpa < end && begin < KMEMSIZE) {
                 maxpa = end;
             }
@@ -208,12 +216,16 @@ page_init(void) {
         maxpa = KMEMSIZE;
     }
 
+    // end：kernel.ld中定义所有数据的最后的地址
     extern char end[];
 
+    // 内核物理页数
     npage = maxpa / PGSIZE;
+    // 内核数据使用的物理页的最后一页的下一页
     pages = (struct Page *)ROUNDUP((void *)end, PGSIZE);
 
     for (i = 0; i < npage; i ++) {
+        // 将内核页后的页表设置为保留
         SetPageReserved(pages + i);
     }
 
@@ -273,8 +285,13 @@ boot_alloc_page(void) {
 //pmm_init - setup a pmm to manage physical memory, build PDT&PT to setup paging mechanism 
 //         - check the correctness of pmm & paging mechanism, print PDT&PT
 void
+
+
+
+
 pmm_init(void) {
     // We've already enabled paging
+    // 此时boot_pgdir已经被置零  0 --> -0XC000 0000
     boot_cr3 = PADDR(boot_pgdir);
 
     //We need to alloc/free the physical memory (granularity is 4KB or other size). 
