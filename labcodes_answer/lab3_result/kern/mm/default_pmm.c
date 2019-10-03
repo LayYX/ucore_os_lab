@@ -128,6 +128,7 @@ default_alloc_pages(size_t n) {
     struct Page *page = NULL;
     list_entry_t *le = &free_list;
     // TODO: optimize (next-fit)
+    // 找到第一个大于n的连续内存空间
     while ((le = list_next(le)) != &free_list) {
         struct Page *p = le2page(le, page_link);
         if (p->property >= n) {

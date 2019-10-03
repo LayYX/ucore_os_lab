@@ -215,6 +215,7 @@ find_proc(int pid) {
     return NULL;
 }
 
+// 创建内核线程
 // kernel_thread - create a kernel thread using "fn" function
 // NOTE: the contents of temp trapframe tf will be copied to 
 //       proc->tf in do_fork-->copy_thread function
@@ -233,8 +234,10 @@ kernel_thread(int (*fn)(void *), void *arg, uint32_t clone_flags) {
 // setup_kstack - alloc pages with size KSTACKPAGE as process kernel stack
 static int
 setup_kstack(struct proc_struct *proc) {
+    // 为栈空间分配内存
     struct Page *page = alloc_pages(KSTACKPAGE);
     if (page != NULL) {
+        // 将栈指针指向 栈空间 对应的虚拟内存地址
         proc->kstack = (uintptr_t)page2kva(page);
         return 0;
     }
@@ -263,10 +266,13 @@ copy_thread(struct proc_struct *proc, uintptr_t esp, struct trapframe *tf) {
     proc->tf = (struct trapframe *)(proc->kstack + KSTACKSIZE) - 1;
     *(proc->tf) = *tf;
     proc->tf->tf_regs.reg_eax = 0;
+    // 使用父进程的栈指针
     proc->tf->tf_esp = esp;
     proc->tf->tf_eflags |= FL_IF;
 
+    // context指针指向fork方法返回处
     proc->context.eip = (uintptr_t)forkret;
+    // context的栈指针指向当前线程的trapframe
     proc->context.esp = (uintptr_t)(proc->tf);
 }
 
@@ -308,20 +314,28 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     //    5. insert proc_struct into hash_list && proc_list
     //    6. call wakeup_proc to make the new child process RUNNABLE
     //    7. set ret vaule using child proc's pid
+
+    // alloc_proc：分配 proc_struct 分配空间
     if ((proc = alloc_proc()) == NULL) {
         goto fork_out;
     }
 
+    // 配置 init 线程
     proc->parent = current;
 
+    // 分配并设置栈
     if (setup_kstack(proc) != 0) {
         goto bad_fork_cleanup_proc;
     }
+    // 复制父进程的内存
     if (copy_mm(clone_flags, proc) != 0) {
         goto bad_fork_cleanup_kstack;
     }
+
+    // 复制线程
     copy_thread(proc, stack, tf);
 
+    // 将当前线程加入到线程链表
     bool intr_flag;
     local_intr_save(intr_flag);
     {
@@ -332,6 +346,7 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     }
     local_intr_restore(intr_flag);
 
+    // 唤醒线程,将线程状态置为 RUNNABLE
     wakeup_proc(proc);
 
     ret = proc->pid;
@@ -365,19 +380,26 @@ init_main(void *arg) {
 
 // proc_init - set up the first kernel thread idleproc "idle" by itself and 
 //           - create the second kernel thread init_main
+/**
+ * 1. 创建 idle 进程 
+ * 2. 为 idle 进程创建 init 子进程
+ */
 void
 proc_init(void) {
     int i;
 
+    // 初始化程序列表
     list_init(&proc_list);
     for (i = 0; i < HASH_LIST_SIZE; i ++) {
         list_init(hash_list + i);
     }
 
+    // 分配程序
     if ((idleproc = alloc_proc()) == NULL) {
         panic("cannot alloc idleproc.\n");
     }
 
+    // 初始化空闲线程
     idleproc->pid = 0;
     idleproc->state = PROC_RUNNABLE;
     idleproc->kstack = (uintptr_t)bootstack;

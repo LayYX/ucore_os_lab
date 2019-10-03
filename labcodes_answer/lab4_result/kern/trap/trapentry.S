@@ -30,6 +30,8 @@ __alltraps:
 .globl __trapret
 __trapret:
     # restore registers from stack
+    # 此时esp指向trapframe的起始地址
+    # popal会将tf_regs中存储的数据推到相应的寄存器中
     popal
 
     # restore %ds, %es, %fs and %gs
@@ -39,11 +41,15 @@ __trapret:
     popl %ds
 
     # get rid of the trap number and error code
+    # esp向上增长8个字节，指向 tf_eip
+    # 将esp指向tf_eip，用于执行iret中断返回
     addl $0x8, %esp
     iret
 
 .globl forkrets
 forkrets:
     # set stack to this new process's trapframe
+    # 栈顶存储eip，eip向上32位才存储指向trapframe的地址
+    # movl 4(%esp), %esp 会使esp指向trapframe的起始地址
     movl 4(%esp), %esp
     jmp __trapret

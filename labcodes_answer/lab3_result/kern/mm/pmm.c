@@ -158,17 +158,16 @@ alloc_pages(size_t n) {
     
     while (1)
     {
-         local_intr_save(intr_flag);
-         {
-              page = pmm_manager->alloc_pages(n);
-         }
-         local_intr_restore(intr_flag);
-
-         if (page != NULL || n > 1 || swap_init_ok == 0) break;
-         
-         extern struct mm_struct *check_mm_struct;
-         //cprintf("page %x, call swap_out in alloc_pages %d\n",page, n);
-         swap_out(check_mm_struct, n, 0);
+        local_intr_save(intr_flag);
+        {
+            page = pmm_manager->alloc_pages(n);
+        }
+        local_intr_restore(intr_flag);
+        if (page != NULL || n > 1 || swap_init_ok == 0) break;
+        
+        extern struct mm_struct *check_mm_struct;
+        //cprintf("page %x, call swap_out in alloc_pages %d\n",page, n);
+        swap_out(check_mm_struct, n, 0);
     }
     //cprintf("n %d,get page %x, No %d in alloc_pages\n",n,page,(page-pages));
     return page;

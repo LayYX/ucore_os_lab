@@ -17,7 +17,9 @@ schedule(void) {
     struct proc_struct *next = NULL;
     local_intr_save(intr_flag);
     {
+        // 当前线程设为不需要调度
         current->need_resched = 0;
+        // 对应程序的 线程链表
         last = (current == idleproc) ? &proc_list : &(current->list_link);
         le = last;
         do {
