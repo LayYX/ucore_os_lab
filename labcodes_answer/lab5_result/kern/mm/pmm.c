@@ -40,6 +40,7 @@ struct Page *pages;
 size_t npage = 0;
 
 // virtual address of boot-time page directory
+// boot_pgdir 为低位地址内存映射
 extern pde_t __boot_pgdir;
 pde_t *boot_pgdir = &__boot_pgdir;
 // physical address of boot-time page directory

@@ -285,6 +285,7 @@ put_kstack(struct proc_struct *proc) {
 }
 
 // setup_pgdir - alloc one page as PDT
+// 将boot_pgdir复制到新进程proc中的 mm -> pgdir 中
 static int
 setup_pgdir(struct mm_struct *mm) {
     struct Page *page;
@@ -306,6 +307,12 @@ put_pgdir(struct mm_struct *mm) {
 
 // copy_mm - process "proc" duplicate OR share process "current"'s mm according clone_flags
 //         - if clone_flags & CLONE_VM, then "share" ; else "duplicate"
+/**
+ * 内存复制
+ * 1. 创建新的 mm_struct，用于管理新进程的内存
+ * 2. 为 mm 创建一份和 boot_pgdir 内容一致的 pgdir
+ * 3. 为 mm 复制和父进程相同的 vma_struct 虚拟内存列表
+ */ 
 static int
 copy_mm(uint32_t clone_flags, struct proc_struct *proc) {
     struct mm_struct *mm, *oldmm = current->mm;
@@ -320,15 +327,18 @@ copy_mm(uint32_t clone_flags, struct proc_struct *proc) {
     }
 
     int ret = -E_NO_MEM;
+    // 创建 mm_struct
     if ((mm = mm_create()) == NULL) {
         goto bad_mm;
     }
+    // 设置 mm->pgdir
     if (setup_pgdir(mm) != 0) {
         goto bad_pgdir_cleanup_mm;
     }
 
     lock_mm(oldmm);
     {
+        // 复制虚拟内存
         ret = dup_mmap(mm, oldmm);
     }
     unlock_mm(oldmm);
@@ -652,6 +662,7 @@ bad_mm:
 int
 do_execve(const char *name, size_t len, unsigned char *binary, size_t size) {
     struct mm_struct *mm = current->mm;
+    // 内核线程不能执行 do_execve
     if (!user_mem_check(mm, (uintptr_t)name, len, 0)) {
         return -E_INVAL;
     }
@@ -664,6 +675,7 @@ do_execve(const char *name, size_t len, unsigned char *binary, size_t size) {
     memcpy(local_name, name, len);
 
     if (mm != NULL) {
+        // 使用内核的页目录内存地址
         lcr3(boot_cr3);
         if (mm_count_dec(mm) == 0) {
             exit_mmap(mm);

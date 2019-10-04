@@ -169,7 +169,7 @@ pgfault_handler(struct trapframe *tf) {
     extern struct mm_struct *check_mm_struct;
     if(check_mm_struct !=NULL) { //used for test check_swap
             print_pgfault(tf);
-        }
+    }
     struct mm_struct *mm;
     if (check_mm_struct != NULL) {
         assert(current == idleproc);
@@ -279,14 +279,20 @@ trap(struct trapframe *tf) {
     }
     else {
         // keep a trapframe chain in stack
+        // 缓存当前进程的 tf
         struct trapframe *otf = current->tf;
+
+        // 将当前进程的trapframe设置传入的tf
         current->tf = tf;
     
+        // 判断是否在内核中发生trap
         bool in_kernel = trap_in_kernel(tf);
     
         trap_dispatch(tf);
     
         current->tf = otf;
+
+        // 对于不在内核发生的trap，需要跳回到之前的用户线程执行处
         if (!in_kernel) {
             if (current->flags & PF_EXITING) {
                 do_exit(-E_KILLED);
